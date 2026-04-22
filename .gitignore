@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment files
+.env
+.env.*
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+
+# Model artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Logs
+*.log
+
+# Large datasets and local archives
+DeepFashion/data/img/
+DeepFashion/data/Anno_coarse/
+DeepFashion/**/*.zip
+DeepFashion/**/*.7z
+
