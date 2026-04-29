@@ -24,7 +24,6 @@ dist/
 *.egg-info/
 
 # Model artifacts
-*.pt
 *.pth
 *.ckpt
 *.onnx
