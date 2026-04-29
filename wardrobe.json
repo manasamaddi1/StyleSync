@@ -1,0 +1,40 @@
+[
+  {
+    "item_id": "2b668b93",
+    "image_path": "uploads\\2b668b93_images.jpg",
+    "category": "top",
+    "color": "brown",
+    "style_tags": [
+      "athletic",
+      "business_casual"
+    ]
+  },
+  {
+    "item_id": "230a72ef",
+    "image_path": "uploads\\230a72ef_download.jpg",
+    "category": "dress",
+    "color": "brown",
+    "style_tags": [
+      "minimal",
+      "business_casual"
+    ]
+  },
+  {
+    "item_id": "4a592032",
+    "image_path": "uploads\\4a592032_613DlBf0pLL._AC_UY900_.jpg",
+    "category": "bottom",
+    "color": "white",
+    "style_tags": [
+      "casual"
+    ]
+  },
+  {
+    "item_id": "1fb5f058",
+    "image_path": "uploads\\1fb5f058_download.jpg",
+    "category": "top",
+    "color": "beige",
+    "style_tags": [
+      "business_casual"
+    ]
+  }
+]
