@@ -37,4 +37,5 @@ DeepFashion/data/img/
 DeepFashion/data/Anno_coarse/
 DeepFashion/**/*.zip
 DeepFashion/**/*.7z
+data/images/
 
