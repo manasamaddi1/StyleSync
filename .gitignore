@@ -39,3 +39,5 @@ DeepFashion/**/*.zip
 DeepFashion/**/*.7z
 data/images/
 
+.vercel
+.env*.local
