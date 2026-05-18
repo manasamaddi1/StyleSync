@@ -276,7 +276,7 @@ function BuildScreen({ state, dispatch, compact, tweaks }) {
   }
   function deleteLook(id) {
     dispatch({ type: 'remove_outfit', id });
-    setToast('Removed.');
+    // Production app shows a global undo toast for this; local toast would duplicate.
   }
 
   // ─────── desktop layout vs mobile ───────

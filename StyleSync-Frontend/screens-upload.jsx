@@ -1,4 +1,7 @@
 // Add / Upload screen — cozy, with tweakable controls
+// API-aware: if window.SS_API exists, uses the real ResNet classifier +
+// Vercel Blob upload. Otherwise falls back to the fake scan with seed data
+// so the same file works in the design preview AND in the deployed app.
 
 const { useState: uS, useEffect: uE, useMemo: uM } = React;
 
@@ -16,24 +19,31 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
   const FS = window.SS_FONT_SERIF, FN = window.SS_FONT_SANS;
   const t = { ...UPLOAD_TWEAKS, ...(tweaks || {}) };
   const incoming = window.SS_INCOMING;
-  const [phase, setPhase] = uS('idle');
+  const hasAPI = typeof window !== 'undefined' && !!window.SS_API;
+
+  const [phase, setPhase] = uS('idle');   // idle | scanning | done
+  const [saving, setSaving] = uS(false);   // uploading on save
   const [reveal, setReveal] = uS({});
+  const [errorMsg, setErrorMsg] = uS(null);
   const [userImage, setUserImage] = uS(null);
   const [originalImage, setOriginalImage] = uS(null);
+  const [userFile, setUserFile] = uS(null);   // raw File for API upload + predict
   const [bgRemoved, setBgRemoved] = uS(false);
   const [editing, setEditing] = uS(false);
-  const [name, setName] = uS(incoming.label);
+  const [name, setName] = uS(hasAPI ? '' : incoming.label);
   const fileRef = React.useRef(null);
 
   function handleFile(e) {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
+    setUserFile(f);
+    setErrorMsg(null);
     const reader = new FileReader();
     reader.onload = (ev) => {
       setUserImage(ev.target.result);
       setOriginalImage(ev.target.result);
       setBgRemoved(false);
-      start();
+      start(f);
     };
     reader.readAsDataURL(f);
   }
@@ -51,7 +61,6 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const px = data.data;
       const w = canvas.width, h = canvas.height;
-      // sample 8 corner regions, average
       const samplePts = [
         [0, 0], [w-1, 0], [0, h-1], [w-1, h-1],
         [Math.floor(w/2), 0], [Math.floor(w/2), h-1],
@@ -63,8 +72,8 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
         br += px[i]; bg += px[i+1]; bb += px[i+2];
       });
       br /= samplePts.length; bg /= samplePts.length; bb /= samplePts.length;
-      const T_HARD = 38;   // fully transparent below this
-      const T_SOFT = 70;   // partially transparent up to this
+      const T_HARD = 38;
+      const T_SOFT = 70;
       for (let i = 0; i < px.length; i += 4) {
         const d = Math.sqrt(
           (px[i]   - br) ** 2 +
@@ -74,7 +83,6 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
         if (d < T_HARD) {
           px[i+3] = 0;
         } else if (d < T_SOFT) {
-          // feather
           px[i+3] = Math.round(((d - T_HARD) / (T_SOFT - T_HARD)) * 255);
         }
       }
@@ -94,9 +102,8 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
   const accentColor = { terra: C.terra, sage: C.sage, butter: C.butter, rose: '#D89AA0' }[t.accent] || C.terra;
   const accentDark = { terra: '#B45A3D', sage: '#5C7458', butter: '#9C7E2E', rose: '#A56F76' }[t.accent] || '#B45A3D';
 
-  function start() {
-    setPhase('scanning');
-    setReveal({});
+  // Fake-scan path — used in design preview and "Try with sample" mode
+  function fakeScan() {
     const k = t.scanSpeed || 1;
     setTimeout(() => setReveal(r => ({ ...r, category: incoming.cat })), 500/k);
     setTimeout(() => setReveal(r => ({ ...r, color: incoming.color })), 1000/k);
@@ -104,21 +111,102 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
     setTimeout(() => setReveal(r => ({ ...r, fabric: 'cotton · pointelle knit' })), 2000/k);
     setTimeout(() => { setReveal(r => ({ ...r, conf: 0.94 })); setPhase('done'); }, 2500/k);
   }
-  function reset() { setPhase('idle'); setReveal({}); setUserImage(null); setOriginalImage(null); setBgRemoved(false); setName(incoming.label); setEditing(false); if (fileRef.current) fileRef.current.value = ''; }
-  function save() {
+
+  async function start(fileOverride) {
+    setPhase('scanning');
+    setReveal({});
+    setErrorMsg(null);
+
+    const file = fileOverride || userFile;
+
+    // No real file (sample mode) or no API → fake scan
+    if (!file || !hasAPI) {
+      fakeScan();
+      return;
+    }
+
+    // Real photo → call HF Space via /api/predict
+    try {
+      const prediction = await window.SS_API.predict(file);
+      const k = t.scanSpeed || 1;
+      // Reveal fields cinematically after the response lands
+      setTimeout(() => setReveal(r => ({ ...r, category: prediction.category })),  300/k);
+      setTimeout(() => setReveal(r => ({ ...r, color:    prediction.color })),     700/k);
+      setTimeout(() => setReveal(r => ({ ...r, vibe:     '' })),                  1100/k);
+      setTimeout(() => setReveal(r => ({ ...r, fabric:   '' })),                  1400/k);
+      setTimeout(() => {
+        setReveal(r => ({
+          ...r,
+          conf: prediction.confidence,
+          _swatch: prediction.swatch,
+          _subcategory: prediction.subcategory,
+        }));
+        setPhase('done');
+        // Vibe wasn't predicted — gently nudge user into edit mode
+        if (!name) {
+          setName(`New ${prediction.subcategory.toLowerCase()}`);
+        }
+      }, 1700/k);
+    } catch (e) {
+      console.error('[StyleSync] predict failed:', e);
+      setPhase('done');
+      setErrorMsg(
+        'Could not read this photo — the model may be warming up. ' +
+        'Try again in 30 seconds, or use a different photo.'
+      );
+    }
+  }
+
+  function reset() {
+    setPhase('idle');
+    setReveal({});
+    setErrorMsg(null);
+    setUserImage(null);
+    setOriginalImage(null);
+    setUserFile(null);
+    setBgRemoved(false);
+    setName(hasAPI ? '' : incoming.label);
+    setEditing(false);
+    setSaving(false);
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
+  async function save() {
+    if (saving) return;
     const finalColor = reveal.color || incoming.color;
     const finalCat   = reveal.category || incoming.cat;
-    const finalVibe  = reveal.vibe ? reveal.vibe.split(/[·,/]\s*/).map(s => s.trim().replace(/\s+/g, '_')).filter(Boolean) : incoming.tags;
+    const finalVibe  = reveal.vibe
+      ? reveal.vibe.split(/[·,/]\s*/).map(s => s.trim().replace(/\s+/g, '_')).filter(Boolean)
+      : [];
+    const finalSwatch = reveal._swatch
+      || (window.SS_SWATCH && window.SS_SWATCH[finalColor])
+      || incoming.swatch;
+
+    // Determine the image to attach. If we have a real file + API, upload to Blob
+    // storage and use the public URL. Otherwise use the in-memory data URL.
+    let imageRef = userImage;
+    if (hasAPI && userFile) {
+      setSaving(true);
+      try {
+        imageRef = await window.SS_API.uploadImage(userFile);
+      } catch (e) {
+        console.error('[StyleSync] upload failed:', e);
+        setErrorMsg('Image upload failed. Saving locally only.');
+      }
+      setSaving(false);
+    }
+
     dispatch({ type: 'add_item', item: {
-      ...incoming,
-      id: 'new_'+Date.now(),
-      label: name,
+      id: 'new_' + Date.now(),
+      label: name || `New ${finalCat}`,
       cat: finalCat,
       color: finalColor,
-      swatch: (window.SS_SWATCH && window.SS_SWATCH[finalColor]) || incoming.swatch,
-      fabric: reveal.fabric || incoming.fabric,
+      swatch: finalSwatch,
+      fabric: reveal.fabric || '',
       tags: finalVibe,
-      image: userImage,
+      image: imageRef,
+      confidence: reveal.conf,
+      createdAt: Date.now(),
     } });
     reset();
     dispatch({ type: 'goto', page: 'wardrobe' });
@@ -130,10 +218,12 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
     poetic:  "A whisper of a tee. Wear it on the porch, in soft light.",
   };
 
-  const similar = state.wardrobe.filter(x => x.cat === incoming.cat).slice(0, 3);
+  const similar = state.wardrobe.filter(x => x.cat === (reveal.category || incoming.cat)).slice(0, 3);
 
-  const headline = phase === 'done' ? 'Tagged & ready.'
-    : phase === 'scanning' ? 'Reading the photo…'
+  const headline = errorMsg ? 'Hmm, something went wrong.'
+    : saving ? 'Saving to your closet…'
+    : phase === 'done' ? 'Tagged & ready.'
+    : phase === 'scanning' ? (hasAPI && userFile ? 'Reading the photo…' : 'Reading the photo…')
     : 'Show us one piece.';
 
   return (
@@ -196,7 +286,7 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
                 </div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
                   <window.SoftButton variant="primary" size="sm" onClick={() => fileRef.current && fileRef.current.click()}>Choose photo</window.SoftButton>
-                  <window.SoftButton variant="ghost" size="sm" onClick={start}>Try with sample</window.SoftButton>
+                  <window.SoftButton variant="ghost" size="sm" onClick={() => start()}>Try with sample</window.SoftButton>
                 </div>
               </div>
             </div>
@@ -227,13 +317,21 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
                   <style>{`@keyframes ssScan { 0%{top:14px} 50%{top:calc(100% - 16px)} 100%{top:14px} }`}</style>
                 </>
               )}
-              {phase === 'done' && (
+              {phase === 'done' && !errorMsg && (
                 <div style={{
                   position: 'absolute', left: 12, top: 12,
                   background: '#5C7458', color: C.cream, fontSize: 10,
                   fontFamily: FN, letterSpacing: 1.2, textTransform: 'uppercase',
                   padding: '4px 9px', borderRadius: R.r3,
                 }}>tagged</div>
+              )}
+              {errorMsg && (
+                <div style={{
+                  position: 'absolute', left: 12, top: 12,
+                  background: '#B85547', color: C.paper, fontSize: 10,
+                  fontFamily: FN, letterSpacing: 1.2, textTransform: 'uppercase',
+                  padding: '4px 9px', borderRadius: R.r3,
+                }}>error</div>
               )}
             </div>
           )}
@@ -261,6 +359,15 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
               {editing && <window.Eyebrow style={{ color: accentDark }}>tap to change</window.Eyebrow>}
             </div>
 
+            {errorMsg && (
+              <div style={{
+                background: `color-mix(in oklab, #B85547, ${C.paper} 90%)`,
+                border: `1px solid color-mix(in oklab, #B85547, ${C.paper} 70%)`,
+                borderRadius: R.r1, padding: 12, marginBottom: 12,
+                fontFamily: FN, fontSize: 13, color: '#7a3a30', lineHeight: 1.5,
+              }}>{errorMsg}</div>
+            )}
+
             {/* Name field — always editable */}
             <div style={{
               display: 'grid', gridTemplateColumns: '90px 1fr',
@@ -286,7 +393,7 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
             {[
               ['Category', 'category', reveal.category, ['top','bottom','shoes','outerwear','dress']],
               ['Color',    'color',    reveal.color,    Object.keys(window.SS_SWATCH || {})],
-              ['Fabric',   'fabric',   reveal.fabric,   ['cotton','linen','wool','silk','denim','knit','cotton · pointelle knit','synthetic']],
+              ['Fabric',   'fabric',   reveal.fabric,   ['cotton','linen','wool','silk','denim','knit','synthetic']],
               ['Vibe',     'vibe',     reveal.vibe,     (window.SS_GENRES || []).map(g => g.key.replace('_',' '))],
               ...(t.showConfidence && !editing ? [['Confidence', 'conf', reveal.conf ? Math.round(reveal.conf*100) + '%' : null, null]] : []),
             ].map(([k, key, v, options], i, arr) => (
@@ -317,7 +424,7 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
                     fontFamily: FN,
                     fontSize: 14, fontWeight: 500,
                     color: v ? C.ink : '#C9BDA0',
-                  }}>{v ?? '—'}</span>
+                  }}>{v || (k === 'Vibe' && phase === 'done' && hasAPI ? 'pick one →' : '—')}</span>
                 )}
                 <span>
                   {k === 'Color' && v && (
@@ -332,8 +439,8 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
               </div>
             ))}
 
-            {/* Stylist's note — kept; this is the one italic moment per card */}
-            {phase === 'done' && (
+            {/* Stylist's note */}
+            {phase === 'done' && !errorMsg && (
               <div style={{
                 marginTop: 14, background: C.cream,
                 borderRadius: R.r1, padding: 14,
@@ -347,20 +454,25 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
             )}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-              {phase === 'idle'     && <window.SoftButton variant="primary" onClick={start}>Start scan</window.SoftButton>}
+              {phase === 'idle'     && <window.SoftButton variant="primary" onClick={() => start()}>Start scan</window.SoftButton>}
               {phase === 'scanning' && <window.SoftButton variant="cream" disabled>Reading…</window.SoftButton>}
-              {phase === 'done' && !editing && <>
-                <window.SoftButton variant="primary" onClick={save}>Save to closet</window.SoftButton>
+              {phase === 'done' && !editing && !errorMsg && <>
+                <window.SoftButton variant="primary" onClick={save} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save to closet'}
+                </window.SoftButton>
                 <window.SoftButton variant="ghost" onClick={() => setEditing(true)}>Edit tags</window.SoftButton>
               </>}
               {phase === 'done' && editing && <>
                 <window.SoftButton variant="primary" onClick={() => setEditing(false)}>Done editing</window.SoftButton>
                 <window.SoftButton variant="ghost" onClick={() => setEditing(false)}>Cancel</window.SoftButton>
               </>}
+              {phase === 'done' && errorMsg && (
+                <window.SoftButton variant="primary" onClick={reset}>Try another photo</window.SoftButton>
+              )}
             </div>
           </div>
 
-          {t.showSimilar && phase === 'done' && similar.length > 0 && (
+          {t.showSimilar && phase === 'done' && !errorMsg && similar.length > 0 && (
             <div style={{
               background: C.paper, border: `1px solid ${C.line}`,
               borderRadius: R.r2, padding: 18,

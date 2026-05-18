@@ -11,7 +11,19 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
 
   const focusId = state.selectedItemId || state.wardrobe[0]?.id;
   const focus = state.wardrobe.find(x => x.id === focusId) || state.wardrobe[0];
-  const [seedR, setSeedR] = uSR(0);
+  // Per-card, per-slot seeds. Empty object means "all zero".
+  // shuffleSlot bumps one slot; shuffleCard bumps every slot in a card; shuffleAll bumps everything.
+  const SLOTS = ['outerwear', 'top', 'bottom', 'shoes'];
+  const [seeds, setSeeds] = uSR([{}, {}, {}]);
+  const shuffleAll = () => setSeeds(s => s.map(c =>
+    Object.fromEntries(SLOTS.map(sl => [sl, (c[sl] || 0) + 1]))
+  ));
+  const shuffleCard = (i) => setSeeds(s => s.map((c, k) =>
+    k === i ? Object.fromEntries(SLOTS.map(sl => [sl, (c[sl] || 0) + 1])) : c
+  ));
+  const shuffleSlot = (i, slot) => setSeeds(s => s.map((c, k) =>
+    k === i ? { ...c, [slot]: (c[slot] || 0) + 1 } : c
+  ));
 
   const outfits = uMR(() => {
     if (!focus) return [];
@@ -24,15 +36,20 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
     ];
     return moods.map((m, i) => {
       const pieces = { [focus.cat]: focus };
+      const cardSeed = seeds[i] || {};
       slots.forEach((s, k) => {
+        const seed = cardSeed[s] || 0;
         const matches = w.filter(x => x.cat === s && x.tags.includes(m.vibe));
         const fall = w.filter(x => x.cat === s);
-        const pool = matches.length ? matches : fall;
-        pieces[s] = pool.length ? pool[(i + k + seedR) % pool.length] : null;
+        const restOfCat = fall.filter(x => !matches.some(mm => mm.id === x.id));
+        const pool = matches.length ? [...matches, ...restOfCat] : fall;
+        pieces[s] = pool.length ? pool[(i + k + seed) % pool.length] : null;
       });
-      return { ...m, id: `${focus.id}-${i}-${seedR}`, pieces };
+      // Card id includes summed seed so React keys remix nicely as things change.
+      const seedSum = SLOTS.reduce((acc, sl) => acc + (cardSeed[sl] || 0), 0);
+      return { ...m, id: `${focus.id}-${i}-${seedSum}`, pieces };
     });
-  }, [focus, state.wardrobe, seedR]);
+  }, [focus, state.wardrobe, seeds]);
 
   if (!focus) return null;
 
@@ -47,8 +64,8 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
           </window.ScreenH1>
         </div>
         <button
-          onClick={() => setSeedR(s => s + 1)}
-          aria-label="Reshuffle"
+          onClick={shuffleAll}
+          aria-label="Reshuffle all"
           style={{
             background: 'transparent', border: `1px solid ${C.line}`,
             color: C.ink, borderRadius: R.r3,
@@ -111,7 +128,7 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
         display: 'grid', gap: compact ? 14 : 18,
         gridTemplateColumns: compact ? '1fr' : 'repeat(3, 1fr)',
       }}>
-        {outfits.map((o) => {
+        {outfits.map((o, oi) => {
           const order = ['outerwear', 'top', 'bottom', 'shoes'];
           return (
             <div key={o.id} style={{
@@ -146,7 +163,7 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
                     <div key={slot} style={{ position: 'relative' }}>
                       <window.GarmentTile item={item} size="sm"
                         style={isFocus ? { boxShadow: `0 0 0 2px ${accentDark}` } : null}/>
-                      {isFocus && (
+                      {isFocus ? (
                         <div style={{
                           position: 'absolute', top: 6, left: 6,
                           background: accentDark, color: C.paper,
@@ -154,6 +171,27 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
                           padding: '3px 7px', borderRadius: R.r3,
                           fontFamily: FN, fontWeight: 500,
                         }}>this piece</div>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); shuffleSlot(oi, slot); }}
+                          aria-label={`Swap ${slot} in “${o.name}”`}
+                          title={`Swap this ${slot}`}
+                          style={{
+                            position: 'absolute', top: 6, right: 6,
+                            width: 26, height: 26, borderRadius: '50%',
+                            background: 'rgba(251,246,234,.92)',
+                            color: C.ink,
+                            border: `1px solid rgba(46,42,36,.10)`,
+                            cursor: 'pointer',
+                            display: 'grid', placeItems: 'center',
+                            fontSize: 14, lineHeight: 1, padding: 0,
+                            backdropFilter: 'blur(4px)',
+                            boxShadow: '0 1px 3px rgba(46,42,36,.10)',
+                            transition: 'transform .12s ease',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotate(40deg)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = ''; }}
+                        >↻</button>
                       )}
                     </div>
                   );
@@ -171,12 +209,13 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
                   ))}
                 </div>
                 <button
-                  onClick={() => setSeedR(s => s + 1)}
+                  onClick={() => shuffleCard(oi)}
+                  aria-label={`Swap pieces in “${o.name}”`}
                   style={{
                     background: 'transparent', border: 'none',
                     color: C.muted, cursor: 'pointer',
                     fontFamily: FN, fontSize: 12, padding: 4,
-                  }}>↻ swap</button>
+                  }}>↻ swap all</button>
               </div>
 
               <button

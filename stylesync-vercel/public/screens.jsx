@@ -31,7 +31,40 @@ function WardrobeScreen({ state, dispatch, compact }) {
   const SW = window.SS_SWATCH;
   const [editingId, setEditingId] = uSC(null);
   const [groupBy, setGroupBy] = uSC('all');
+  const [sortBy, setSortBy] = uSC('newest');
+  const [query, setQuery] = uSC('');
   const editing = editingId ? state.wardrobe.find(x => x.id === editingId) : null;
+
+  // Perceptual color order — lights → warms → cools → darks. Unknowns last.
+  const COLOR_ORDER = ['white','cream','beige','tan','yellow','orange','red','pink','purple','blue','green','gray','brown','black'];
+
+  // Search filter — matches name, color, category, fabric, or any vibe tag.
+  const q = query.trim().toLowerCase();
+  const matchedRaw = q
+    ? state.wardrobe.filter(it =>
+        (it.label  || '').toLowerCase().includes(q) ||
+        (it.color  || '').toLowerCase().includes(q) ||
+        (it.cat    || '').toLowerCase().includes(q) ||
+        (it.fabric || '').toLowerCase().includes(q) ||
+        (it.tags || []).some(t => String(t).toLowerCase().includes(q))
+      )
+    : state.wardrobe;
+
+  // Sort — applied before grouping so the order is consistent within each section.
+  const matchedWardrobe = (() => {
+    const arr = [...matchedRaw];
+    if (sortBy === 'a-z') {
+      arr.sort((a, b) => (a.label || '').localeCompare(b.label || ''));
+    } else if (sortBy === 'color') {
+      arr.sort((a, b) => {
+        const ai = COLOR_ORDER.indexOf(a.color); const bi = COLOR_ORDER.indexOf(b.color);
+        const ao = ai < 0 ? 999 : ai; const bo = bi < 0 ? 999 : bi;
+        return ao - bo || (a.label || '').localeCompare(b.label || '');
+      });
+    }
+    // 'newest' = natural array order (add_item prepends, so newest is already first)
+    return arr;
+  })();
 
   const groupOptions = [
     { k: 'all',      label: 'All'      },
@@ -49,8 +82,8 @@ function WardrobeScreen({ state, dispatch, compact }) {
       if (!map.has(k)) map.set(k, []);
       map.get(k).push(item);
     };
-    state.wardrobe.forEach(it => {
-      if (groupBy === 'all')           push('Everything', it);
+    matchedWardrobe.forEach(it => {
+      if (groupBy === 'all')           push(q ? 'Matches' : 'Everything', it);
       else if (groupBy === 'category') push(it.cat, it);
       else if (groupBy === 'color')    push(it.color, it);
       else if (groupBy === 'fabric')   push(it.fabric, it);
@@ -69,8 +102,41 @@ function WardrobeScreen({ state, dispatch, compact }) {
         </window.ScreenH1>
       </div>
 
-      {/* Group-by selector */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      {/* Search */}
+      <div style={{ position: 'relative', maxWidth: compact ? '100%' : 420 }}>
+        <span aria-hidden style={{
+          position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+          color: C.muted, fontSize: 14, lineHeight: 1, pointerEvents: 'none',
+        }}>⌕</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name, color, vibe…"
+          aria-label="Search closet"
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            background: C.paper, border: `1px solid ${C.line}`,
+            borderRadius: R.r3,
+            padding: '10px 36px 10px 34px',
+            fontFamily: FN, fontSize: 14, color: C.ink,
+            outline: 'none',
+          }}
+        />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            aria-label="Clear search"
+            style={{
+              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: C.muted, fontSize: 18, lineHeight: 1, padding: 6,
+            }}>×</button>
+        )}
+      </div>
+
+      {/* Group-by + Sort */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', rowGap: 10 }}>
         <span style={{ fontFamily: FN, fontSize: 12, color: C.muted }}>Group by</span>
         {groupOptions.map(g => (
           <button key={g.k}
@@ -84,10 +150,46 @@ function WardrobeScreen({ state, dispatch, compact }) {
               fontFamily: FN, fontSize: 12.5, fontWeight: 500,
             }}>{g.label}</button>
         ))}
+        <span aria-hidden style={{ width: 1, height: 18, background: C.line, margin: '0 4px' }} />
+        <span style={{ fontFamily: FN, fontSize: 12, color: C.muted }}>Sort</span>
+        {[
+          { k: 'newest', label: 'Newest'  },
+          { k: 'a-z',    label: 'A–Z'    },
+          { k: 'color',  label: 'By color'},
+        ].map(s => (
+          <button key={s.k}
+            onClick={() => setSortBy(s.k)}
+            style={{
+              background: sortBy === s.k ? C.ink : C.paper,
+              color: sortBy === s.k ? C.paper : C.ink,
+              border: `1px solid ${sortBy === s.k ? C.ink : C.line}`,
+              borderRadius: R.r3, cursor: 'pointer',
+              padding: '7px 13px',
+              fontFamily: FN, fontSize: 12.5, fontWeight: 500,
+            }}>{s.label}</button>
+        ))}
       </div>
 
       {/* Groups */}
       <div style={{ display: 'grid', gap: compact ? 22 : 28 }}>
+        {groups.length === 0 && (
+          <div style={{
+            background: C.paper, border: `1px dashed ${C.line}`,
+            borderRadius: R.r2, padding: compact ? 24 : 36,
+            textAlign: 'center', display: 'grid', gap: 8,
+          }}>
+            <div style={{
+              fontFamily: window.SS_FONT_SERIF, fontStyle: 'italic',
+              fontSize: compact ? 20 : 24, color: C.ink,
+            }}>Nothing matches “{query}”.</div>
+            <div style={{ fontFamily: FN, fontSize: 13, color: C.muted }}>
+              Try a color, a category, or a vibe.
+            </div>
+            <div style={{ marginTop: 6 }}>
+              <window.SoftButton variant="ghost" size="sm" onClick={() => setQuery('')}>Clear search</window.SoftButton>
+            </div>
+          </div>
+        )}
         {groups.map(([groupKey, items]) => (
           <div key={groupKey}>
             <div style={{
@@ -116,6 +218,7 @@ function WardrobeScreen({ state, dispatch, compact }) {
                   key={it.id + '-' + groupKey} item={it}
                   favorite={state.favorites.includes(it.id)}
                   onClick={() => setEditingId(it.id)}
+                  onToggleFav={(x) => dispatch({ type: 'fav', id: x.id })}
                 />
               ))}
             </div>

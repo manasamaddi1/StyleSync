@@ -31,11 +31,17 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
   const [bgRemoved, setBgRemoved] = uS(false);
   const [editing, setEditing] = uS(false);
   const [name, setName] = uS(hasAPI ? '' : incoming.label);
+  const [dragOver, setDragOver] = uS(false);
   const fileRef = React.useRef(null);
 
-  function handleFile(e) {
-    const f = e.target.files && e.target.files[0];
+  // Shared ingest path — used by file input AND drag-drop.
+  function ingestFile(f) {
     if (!f) return;
+    if (!f.type || !f.type.startsWith('image/')) {
+      setErrorMsg("That doesn't look like an image. Try a PNG or JPG.");
+      setPhase('done');
+      return;
+    }
     setUserFile(f);
     setErrorMsg(null);
     const reader = new FileReader();
@@ -46,6 +52,18 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
       start(f);
     };
     reader.readAsDataURL(f);
+  }
+
+  function handleFile(e) {
+    const f = e.target.files && e.target.files[0];
+    ingestFile(f);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    ingestFile(f);
   }
 
   // Corner-sample background removal. Works best on plain backdrops.
@@ -248,12 +266,24 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
           <window.Eyebrow style={{ marginBottom: 14 }}>Photo</window.Eyebrow>
 
           {phase === 'idle' ? (
-            <div style={{
-              aspectRatio: '4/5', borderRadius: R.r1,
-              border: `1px solid ${C.line}`,
-              background: C.cream,
-              display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center',
-            }}>
+            <div
+              onDragOver={(e) => { e.preventDefault(); if (!dragOver) setDragOver(true); }}
+              onDragEnter={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={(e) => {
+                // Only un-highlight when leaving the dropzone itself, not its children.
+                if (e.currentTarget.contains(e.relatedTarget)) return;
+                setDragOver(false);
+              }}
+              onDrop={handleDrop}
+              style={{
+                aspectRatio: '4/5', borderRadius: R.r1,
+                border: `${dragOver ? 2 : 1}px ${dragOver ? 'solid' : 'solid'} ${dragOver ? accentDark : C.line}`,
+                background: dragOver
+                  ? `color-mix(in oklab, ${accentColor}, ${C.cream} 80%)`
+                  : C.cream,
+                display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center',
+                transition: 'background .15s, border-color .15s',
+              }}>
               <div>
                 <input
                   ref={fileRef}
@@ -280,7 +310,7 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
                 <div style={{
                   fontFamily: FS, fontSize: compact ? 19 : 22, color: C.ink, marginBottom: 8,
                   letterSpacing: -0.2,
-                }}>Drop a photo here</div>
+                }}>{dragOver ? 'Release to add' : 'Drop a photo here'}</div>
                 <div style={{ fontFamily: FN, fontSize: 12, color: C.muted, marginBottom: 18 }}>
                   PNG or JPG · single piece works best
                 </div>

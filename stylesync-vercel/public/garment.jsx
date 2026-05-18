@@ -61,7 +61,7 @@ function CategoryGlyph({ cat, color }) {
   );
 }
 
-function GarmentTile({ item, size = 'md', selected = false, favorite = false, onClick, style: extraStyle }) {
+function GarmentTile({ item, size = 'md', selected = false, favorite = false, onClick, onToggleFav, style: extraStyle }) {
   if (!item) {
     return (
       <div style={{
@@ -133,7 +133,31 @@ function GarmentTile({ item, size = 'md', selected = false, favorite = false, on
         )}
       </div>
 
-      {favorite && (
+      {/* Favorite indicator / toggle. When `onToggleFav` is provided, the heart
+         is interactive and always visible (filled when saved, outline when not).
+         Otherwise it's just a passive badge shown only when `favorite` is true. */}
+      {onToggleFav ? (
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFav(item); }}
+          aria-label={favorite ? `Unsave ${item.label}` : `Save ${item.label}`}
+          aria-pressed={favorite}
+          title={favorite ? 'Saved' : 'Save'}
+          style={{
+            position: 'absolute', top: 10, right: 10,
+            width: 26, height: 26, borderRadius: '50%',
+            background: favorite ? '#FBF6EA' : 'rgba(251,246,234,.82)',
+            color: favorite ? '#D08A6E' : '#8C7F66',
+            border: `1px solid ${favorite ? '#D08A6E' : 'rgba(46,42,36,.10)'}`,
+            display: 'grid', placeItems: 'center',
+            fontSize: 13, fontWeight: 700, padding: 0, cursor: 'pointer',
+            boxShadow: favorite ? '0 1px 3px rgba(46,42,36,.14)' : 'none',
+            transition: 'transform .12s ease',
+            backdropFilter: 'blur(4px)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = ''; }}
+        >{favorite ? '♥' : '♡'}</button>
+      ) : favorite ? (
         <div style={{
           position: 'absolute', top: 12, right: 12,
           width: 22, height: 22, borderRadius: '50%',
@@ -143,7 +167,7 @@ function GarmentTile({ item, size = 'md', selected = false, favorite = false, on
           fontSize: 12, fontWeight: 700,
           boxShadow: '0 1px 2px rgba(46,42,36,.12)',
         }}>♥</div>
-      )}
+      ) : null}
 
       <div style={{
         position: 'absolute', left: 10, right: 10, bottom: 10,
