@@ -1,0 +1,503 @@
+{
+  "labels": [
+    "casual",
+    "everyday_polished",
+    "business_casual",
+    "formal",
+    "social"
+  ],
+  "category_groups": {
+    "top": [
+      "Tee",
+      "Blouse",
+      "Tank",
+      "Sweater",
+      "Top"
+    ],
+    "bottom": [
+      "Shorts",
+      "Skirt",
+      "Jeans",
+      "Leggings",
+      "Joggers"
+    ],
+    "outerwear": [
+      "Cardigan",
+      "Jacket",
+      "Blazer",
+      "Coat"
+    ]
+  },
+  "base_scores": {
+    "Tee": {
+      "casual": 4,
+      "everyday_polished": 1
+    },
+    "Blouse": {
+      "everyday_polished": 3,
+      "business_casual": 2
+    },
+    "Tank": {
+      "casual": 3
+    },
+    "Sweater": {
+      "casual": 3,
+      "everyday_polished": 2
+    },
+    "Top": {
+      "casual": 1,
+      "everyday_polished": 2
+    },
+    "Shorts": {
+      "casual": 4
+    },
+    "Skirt": {
+      "everyday_polished": 2,
+      "business_casual": 2
+    },
+    "Jeans": {
+      "casual": 4,
+      "everyday_polished": 1
+    },
+    "Leggings": {
+      "casual": 4
+    },
+    "Joggers": {
+      "casual": 4
+    },
+    "Cardigan": {
+      "casual": 1,
+      "everyday_polished": 2,
+      "business_casual": 2
+    },
+    "Jacket": {
+      "casual": 2,
+      "everyday_polished": 1,
+      "business_casual": 1
+    },
+    "Blazer": {
+      "everyday_polished": 2,
+      "business_casual": 4,
+      "formal": 2
+    },
+    "Coat": {
+      "everyday_polished": 1,
+      "business_casual": 2,
+      "formal": 3
+    }
+  },
+  "modifiers": {
+    "pattern_family": {
+      "solid": {
+        "everyday_polished": 1,
+        "business_casual": 1,
+        "formal": 1
+      },
+      "graphic": {
+        "casual": 2
+      },
+      "floral": {
+        "everyday_polished": 1,
+        "social": 1
+      },
+      "striped": {
+        "everyday_polished": 1,
+        "business_casual": 1
+      },
+      "embroidered": {
+        "everyday_polished": 1,
+        "formal": 1,
+        "social": 2
+      }
+    },
+    "material_family": {
+      "denim": {
+        "casual": 3
+      },
+      "knit": {
+        "casual": 2,
+        "everyday_polished": 1
+      },
+      "chiffon": {
+        "everyday_polished": 1,
+        "formal": 2,
+        "social": 2
+      },
+      "leather": {
+        "everyday_polished": 1,
+        "social": 3
+      },
+      "faux": {
+        "social": 3
+      }
+    },
+    "fit_family": {
+      "tight": {
+        "everyday_polished": 1,
+        "social": 2
+      },
+      "loose": {
+        "casual": 1
+      },
+      "pleated": {
+        "everyday_polished": 1,
+        "business_casual": 1,
+        "formal": 1
+      }
+    },
+    "length_family": {
+      "maxi_length": {
+        "everyday_polished": 1,
+        "formal": 2
+      },
+      "mini_length": {
+        "casual": 1,
+        "social": 2
+      }
+    },
+    "sleeve_family": {
+      "long_sleeve": {
+        "business_casual": 1,
+        "formal": 1
+      },
+      "short_sleeve": {
+        "casual": 1
+      },
+      "sleeveless": {
+        "casual": 1,
+        "social": 1
+      }
+    },
+    "neckline_family": {
+      "crew_neckline": {
+        "business_casual": 1
+      },
+      "v_neckline": {
+        "everyday_polished": 1,
+        "social": 1
+      },
+      "square_neckline": {
+        "formal": 1,
+        "social": 1
+      }
+    }
+  },
+  "conditional_rules": [
+    {
+      "name": "denim_suppresses_dressy_labels",
+      "when_all": [
+        {
+          "field": "material_family",
+          "op": "eq",
+          "value": "denim"
+        }
+      ],
+      "deltas": {
+        "business_casual": -2,
+        "formal": -4,
+        "social": -1
+      }
+    },
+    {
+      "name": "graphic_suppresses_formal_labels",
+      "when_all": [
+        {
+          "field": "pattern_family",
+          "op": "eq",
+          "value": "graphic"
+        }
+      ],
+      "deltas": {
+        "business_casual": -1,
+        "formal": -4,
+        "social": -1
+      }
+    },
+    {
+      "name": "knit_not_formal",
+      "when_all": [
+        {
+          "field": "material_family",
+          "op": "eq",
+          "value": "knit"
+        }
+      ],
+      "deltas": {
+        "formal": -2
+      }
+    },
+    {
+      "name": "faux_not_formal",
+      "when_all": [
+        {
+          "field": "material_family",
+          "op": "eq",
+          "value": "faux"
+        }
+      ],
+      "deltas": {
+        "formal": -2
+      }
+    },
+    {
+      "name": "shorts_not_dressy",
+      "when_all": [
+        {
+          "field": "category_name",
+          "op": "eq",
+          "value": "Shorts"
+        }
+      ],
+      "deltas": {
+        "business_casual": -2,
+        "formal": -6
+      }
+    },
+    {
+      "name": "leggings_are_casual",
+      "when_all": [
+        {
+          "field": "category_name",
+          "op": "eq",
+          "value": "Leggings"
+        }
+      ],
+      "deltas": {
+        "business_casual": -3,
+        "formal": -5,
+        "social": -2
+      }
+    },
+    {
+      "name": "joggers_are_casual",
+      "when_all": [
+        {
+          "field": "category_name",
+          "op": "eq",
+          "value": "Joggers"
+        }
+      ],
+      "deltas": {
+        "business_casual": -4,
+        "formal": -5,
+        "social": -2
+      }
+    },
+    {
+      "name": "tank_defaults_casual",
+      "when_all": [
+        {
+          "field": "category_name",
+          "op": "eq",
+          "value": "Tank"
+        },
+        {
+          "field": "material_family",
+          "op": "not_in",
+          "value": [
+            "chiffon",
+            "leather",
+            "faux"
+          ]
+        },
+        {
+          "field": "pattern_family",
+          "op": "not_in",
+          "value": [
+            "embroidered"
+          ]
+        }
+      ],
+      "deltas": {
+        "everyday_polished": -1,
+        "social": -2,
+        "formal": -2
+      }
+    },
+    {
+      "name": "coat_not_formal_by_default",
+      "when_all": [
+        {
+          "field": "category_name",
+          "op": "eq",
+          "value": "Coat"
+        },
+        {
+          "field": "pattern_family",
+          "op": "not_in",
+          "value": [
+            "solid",
+            "embroidered"
+          ]
+        }
+      ],
+      "deltas": {
+        "formal": -3
+      }
+    },
+    {
+      "name": "sleeveless_coat_not_formal",
+      "when_all": [
+        {
+          "field": "category_name",
+          "op": "eq",
+          "value": "Coat"
+        },
+        {
+          "field": "sleeve_family",
+          "op": "eq",
+          "value": "sleeveless"
+        }
+      ],
+      "deltas": {
+        "formal": -4
+      }
+    },
+    {
+      "name": "mini_tight_skirt_is_social",
+      "when_all": [
+        {
+          "field": "category_name",
+          "op": "eq",
+          "value": "Skirt"
+        },
+        {
+          "field": "length_family",
+          "op": "eq",
+          "value": "mini_length"
+        },
+        {
+          "field": "fit_family",
+          "op": "eq",
+          "value": "tight"
+        }
+      ],
+      "deltas": {
+        "social": 2
+      }
+    },
+    {
+      "name": "chiffon_square_blouse_can_be_formal",
+      "when_all": [
+        {
+          "field": "category_name",
+          "op": "eq",
+          "value": "Blouse"
+        },
+        {
+          "field": "material_family",
+          "op": "eq",
+          "value": "chiffon"
+        },
+        {
+          "field": "neckline_family",
+          "op": "eq",
+          "value": "square_neckline"
+        },
+        {
+          "field": "sleeve_family",
+          "op": "eq",
+          "value": "long_sleeve"
+        }
+      ],
+      "deltas": {
+        "formal": 2
+      }
+    },
+    {
+      "name": "sleeveless_penalizes_workwear",
+      "when_all": [
+        {
+          "field": "sleeve_family",
+          "op": "eq",
+          "value": "sleeveless"
+        }
+      ],
+      "deltas": {
+        "business_casual": -1,
+        "formal": -1
+      }
+    },
+    {
+      "name": "mini_length_penalizes_formal",
+      "when_all": [
+        {
+          "field": "length_family",
+          "op": "eq",
+          "value": "mini_length"
+        }
+      ],
+      "deltas": {
+        "formal": -2
+      }
+    },
+    {
+      "name": "loose_fit_not_formal",
+      "when_all": [
+        {
+          "field": "fit_family",
+          "op": "eq",
+          "value": "loose"
+        }
+      ],
+      "deltas": {
+        "formal": -1
+      }
+    }
+  ],
+  "label_guardrails": {
+    "formal": {
+      "min_score": 5,
+      "min_margin": 1,
+      "fallback_order": [
+        "business_casual",
+        "everyday_polished",
+        "casual"
+      ],
+      "forbidden_categories": [
+        "Shorts",
+        "Jeans",
+        "Joggers",
+        "Leggings",
+        "Tank",
+        "Tee"
+      ],
+      "forbidden_patterns": [
+        "graphic"
+      ],
+      "forbidden_materials": [
+        "denim",
+        "knit",
+        "faux"
+      ]
+    },
+    "social": {
+      "min_score": 5,
+      "min_margin": 1,
+      "fallback_order": [
+        "everyday_polished",
+        "casual"
+      ],
+      "forbidden_categories": [
+        "Jeans",
+        "Joggers",
+        "Coat",
+        "Cardigan"
+      ],
+      "forbidden_patterns": [
+        "graphic"
+      ]
+    }
+  },
+  "fallback": {
+    "low_margin_threshold": 2,
+    "guarded_labels": [
+      "formal",
+      "social"
+    ],
+    "safe_labels": [
+      "casual",
+      "everyday_polished"
+    ]
+  }
+}
