@@ -14,15 +14,13 @@ The supported category groups are:
 
 We are also dropping `length_family` from V1 because it was not useful enough for recommendation logic.
 
-## Final V1 Heads
+## Active Recommendation Heads
 
-Model B should have these 5 heads:
+The active recommendation-focused model uses these 3 heads:
 
 1. `pattern_family`
 2. `material_family`
-3. `fit_family`
-4. `sleeve_family`
-5. `neckline_family`
+3. `sleeve_family`
 
 ## Category Usage
 
@@ -32,9 +30,7 @@ Use these heads:
 
 - `pattern_family`
 - `material_family`
-- `fit_family`
 - `sleeve_family`
-- `neckline_family`
 
 ### Bottomwear
 
@@ -42,12 +38,10 @@ Use these heads:
 
 - `pattern_family`
 - `material_family`
-- `fit_family`
 
 Do not use:
 
 - `sleeve_family`
-- `neckline_family`
 
 ### Outerwear
 
@@ -55,12 +49,7 @@ Use these heads:
 
 - `pattern_family`
 - `material_family`
-- `fit_family`
 - `sleeve_family`
-
-Do not use:
-
-- `neckline_family`
 
 ## Final V1 Label Sets
 
@@ -83,37 +72,27 @@ Why it stays:
 
 ### 2. `material_family`
 
-Label set:
+Label set for the active recommendation-focused V2 track:
 
 - `denim`
 - `knit`
 - `chiffon`
 - `leather`
-- `faux`
 - `other`
 
-Why it stays:
+Why this V2 version:
 
-- strong recommendation value
-- helps identify casual vs elevated textures
-- useful across all three category groups
+- `faux` was too rare as a standalone class
+- `faux` and `leather` overlap visually in the current dataset
+- merging `faux -> leather` makes the material head more learnable
+- still preserves a useful elevated-texture signal for recommendation
 
-### 3. `fit_family`
+Dataset note:
 
-Label set:
+- the preserved V1 dataset still exists for comparison
+- the active V2 modeling dataset remaps `faux` to `leather`
 
-- `tight`
-- `loose`
-- `pleated`
-- `other`
-
-Why it stays:
-
-- useful for outfit balancing
-- especially helpful for bottomwear
-- weaker than pattern/material, but still worth keeping in V1
-
-### 4. `sleeve_family`
+### 3. `sleeve_family`
 
 Label set:
 
@@ -133,26 +112,6 @@ Why it stays:
 - healthy class spread for tops
 - still useful for outerwear
 
-### 5. `neckline_family`
-
-Label set:
-
-- `crew_neckline`
-- `v_neckline`
-- `other`
-
-Training note:
-
-- supervise this head only for `tops`
-- do not supervise this head for `bottomwear`
-- do not supervise this head for `outerwear`
-
-Why this version:
-
-- `square_neckline` is too rare for V1
-- collapsing to `other` makes the head cleaner
-- keeps the most useful neckline distinction without overfitting to tiny classes
-
 ## Heads Removed From V1
 
 ### `length_family`
@@ -166,17 +125,32 @@ Why:
 - bottomwear was almost entirely `regular`
 - not strong enough to justify a full head
 
+### `fit_family`
+
+Dropped from the active recommendation track.
+
+Why:
+
+- too dominated by `other`
+- weak signal compared with pattern and sleeve
+- did not improve recommendation value enough for the added noise
+
+### `neckline_family`
+
+Dropped from the active recommendation track.
+
+Why:
+
+- only useful for tops
+- more helpful for item description than pairing logic
+- lower recommendation value than the remaining 3 heads
+
 ## Final Training Behavior
 
 ### Heads supervised for all categories
 
 - `pattern_family`
 - `material_family`
-- `fit_family`
-
-### Heads supervised only for tops
-
-- `neckline_family`
 
 ### Heads supervised for tops and outerwear
 
@@ -187,19 +161,17 @@ Why:
 Model B V1 should use:
 
 - 1 shared backbone
-- 5 total heads
+- 3 active heads
 - category-based masking during training
 
-Final V1 head list:
+Active head list:
 
 - `pattern_family`
 - `material_family`
-- `fit_family`
 - `sleeve_family`
-- `neckline_family`
 
-Final V1 category mapping:
+Active category mapping:
 
-- `tops`: all 5 heads
-- `bottomwear`: first 3 heads
-- `outerwear`: first 4 heads
+- `tops`: all 3 heads
+- `bottomwear`: `pattern_family`, `material_family`
+- `outerwear`: all 3 heads
