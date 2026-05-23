@@ -1,5 +1,77 @@
 # Model B V1 Modeling Spec
 
+## Image Download
+
+If `DeepFashion/data/img/` is missing locally, download the official DeepFashion files from Google Drive:
+
+- [DeepFashion Google Drive folder](https://drive.google.com/drive/folders/0B7EVK8r0v71pWGplNFhjc01NbzQ?resourcekey=0-BU3lAk-Nc7HscJu-CyC1yA)
+
+Place the extracted image folders here:
+
+- `/Users/jadenwu/Desktop/StyleSync/StyleSync/DeepFashion/data/img/`
+
+The notebook expects image paths like:
+
+- `/Users/jadenwu/Desktop/StyleSync/StyleSync/DeepFashion/data/img/<item_folder>/<image_name>.jpg`
+
+If the downloaded archive extracts into an extra nested folder, move the inner `img/` directory so the final path is exactly:
+
+- `/Users/jadenwu/Desktop/StyleSync/StyleSync/DeepFashion/data/img/`
+
+## Required Anno Fine Files
+
+The current Model B dataset is derived from the `Anno_fine` benchmark, not the full `Anno_coarse` benchmark.
+
+The active V2 CSV:
+
+- [anno_fine_v2_common_items_material_merged.csv](/Users/jadenwu/Desktop/StyleSync/StyleSync/DeepFashion/data/anno_fine_v2_common_items_material_merged.csv)
+
+comes from the fine-annotation pipeline:
+
+- `Anno_fine/*.txt` -> `anno_fine_merged.csv` -> `anno_fine_outfit_features.csv` -> `anno_fine_v1_common_items.csv` -> `anno_fine_v2_common_items_material_merged.csv`
+
+To rebuild this pipeline from scratch, make sure these files exist under:
+
+- `/Users/jadenwu/Desktop/StyleSync/StyleSync/DeepFashion/data/Anno_fine/`
+
+Required files:
+
+- `list_category_cloth.txt`
+- `list_attr_cloth.txt`
+- `train.txt`
+- `val.txt`
+- `test.txt`
+- `train_cate.txt`
+- `val_cate.txt`
+- `test_cate.txt`
+- `train_attr.txt`
+- `val_attr.txt`
+- `test_attr.txt`
+- `train_bbox.txt`
+- `val_bbox.txt`
+- `test_bbox.txt`
+- `train_landmarks.txt`
+- `val_landmarks.txt`
+- `test_landmarks.txt`
+
+What each group is used for:
+
+- `train.txt`, `val.txt`, `test.txt`: image names for each split
+- `*_cate.txt`: category ids aligned row-by-row with each split file
+- `*_attr.txt`: fine attribute labels aligned row-by-row with each split file
+- `*_bbox.txt`: bounding boxes aligned row-by-row with each split file
+- `*_landmarks.txt`: landmarks aligned row-by-row with each split file
+- `list_category_cloth.txt`: category-id lookup
+- `list_attr_cloth.txt`: fine-attribute lookup
+
+For the current modeling notebook, the minimum local data you need is:
+
+- `DeepFashion/data/img/`
+- `DeepFashion/data/Anno_fine/`
+- `DeepFashion/data/anno_fine_v2_common_items_material_merged.csv`
+
+If you only want to run the notebook and not rebuild the preprocessing pipeline, the derived CSV plus `img/` is enough.
+
 This folder contains the active PyTorch training workspace for Model B.
 
 Model B is the shared attribute model that runs after category prediction.
