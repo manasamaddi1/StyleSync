@@ -1,0 +1,36 @@
+{
+  "head_specs": {
+    "pattern_family": [
+      "solid",
+      "graphic",
+      "striped",
+      "other"
+    ],
+    "material_family": [
+      "denim",
+      "leather",
+      "other"
+    ],
+    "sleeve_family": [
+      "sleeveless",
+      "short_sleeve",
+      "long_sleeve"
+    ]
+  },
+  "category_heads": {
+    "top": [
+      "pattern_family",
+      "material_family",
+      "sleeve_family"
+    ],
+    "bottom": [
+      "pattern_family",
+      "material_family"
+    ],
+    "outerwear": [
+      "pattern_family",
+      "material_family",
+      "sleeve_family"
+    ]
+  }
+}
