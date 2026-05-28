@@ -1,4 +1,4 @@
-# 👗 StyleSync
+# StyleSync
 
 A wardrobe planning tool that turns photos of individual clothing items into complete outfit suggestions. Upload a photo of any clothing piece, and StyleSync classifies it, extracts its color and attributes, and adds it to your digital closet. From there, a rule-based outfit engine assembles complete looks filtered by occasion — casual, formal, or sports.
 
@@ -278,7 +278,7 @@ All models use ResNet-50 pretrained on ImageNet as the backbone.
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-org/StyleSync.git
+git clone https://github.com/manasamaddi1/StyleSync.git
 cd StyleSync
 ```
 
@@ -311,7 +311,7 @@ For the full pipeline to work locally you need both running simultaneously:
 - Terminal 1: `python app.py` (Gradio on port 7860)
 - Terminal 2: `cd stylesync-vercel && npm run dev` (Next.js on port 3000)
 
-Set `NEXT_PUBLIC_HF_SPACE_URL` in `.env.local` to `http://localhost:7860` to point the Next.js API routes at your local Gradio instance instead of the deployed HF Space.
+Set `HF_SPACE_ID` in `.env.local` to point the Next.js API routes at your local Gradio instance instead of the deployed HF Space. Since `hf-client.ts` uses `@gradio/client` with just the Space ID, for local development you may need to run the Gradio app and call it directly at `http://localhost:7860`.
 
 ---
 
@@ -321,7 +321,7 @@ Set `NEXT_PUBLIC_HF_SPACE_URL` in `.env.local` to `http://localhost:7860` to poi
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_HF_SPACE_URL` | URL of the Hugging Face Space running `app.py` (e.g. `https://aaron8wong-stylesync-app.hf.space` in production, `http://localhost:7860` locally) |
+| `HF_SPACE_ID` | Hugging Face Space ID for the inference app (e.g. `aaron8wong/stylesync-app`). Defaults to `aaron8wong/stylesync-app` if not set. Override this to point at a different Space or a local Gradio instance. |
 | `KV_URL` | Vercel KV connection URL — auto-injected by Vercel when KV is provisioned |
 | `KV_REST_API_URL` | Vercel KV REST URL — auto-injected by Vercel |
 | `KV_REST_API_TOKEN` | Vercel KV token — auto-injected by Vercel |
@@ -366,6 +366,4 @@ The Gradio app (`app.py`) is deployed to [aaron8wong/stylesync-app](https://hugg
 | **Model weights not in repo** | `.pt` files are excluded from version control due to size. The Gradio app will fail to start without them present. |
 | **No Dress or Shoes attribute predictions** | Model C only covers Tops, Bottomwear, and Outerwear. Shoes are handled through category, occasion, and color only. Dresses are out of scope for attribute prediction. |
 | **Session-level wardrobe only** | Wardrobe data is tied to Vercel KV session keys. There is no user authentication — all items in a session are shared by anyone with the same session identifier. |
-| **`backend/` folder is dead** | The `backend/` directory contains only `__pycache__` files from an earlier FastAPI prototype. It is not used anywhere in the current pipeline and can be ignored. |
-| **`NEXT_PUBLIC_BACKEND_URL` is unused** | `.env.local` contains `NEXT_PUBLIC_BACKEND_URL=http://localhost:8000` as a leftover from the FastAPI era. This variable is not referenced anywhere in the current codebase. |
 | **Recommendation engine not yet signal-complete** | The V1 engine cannot model silhouette, fit balance, item length, footwear attributes, season, or personal style preference. It is strongest on color harmony, occasion consistency, and basic pattern compatibility. |
