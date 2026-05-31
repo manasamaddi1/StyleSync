@@ -55,6 +55,47 @@ This is intentionally simple because the recommendation layer should be easy to 
 
 ## Available Signals
 
+### Current Final Attribute Model
+
+The current final attribute checkpoint for recommendation is the V3 pattern-simplified model:
+
+- `model_b_v3_pattern_simplified_resnet50_best.pt`
+
+This model uses the final recommendation-facing attribute schema:
+
+- `pattern_family`
+  - `solid`
+  - `graphic`
+  - `floral`
+  - `striped`
+  - `other`
+- `material_family`
+  - `denim`
+  - `knit`
+  - `chiffon`
+  - `leather`
+  - `other`
+- `sleeve_family`
+  - `sleeveless`
+  - `short_sleeve`
+  - `long_sleeve`
+
+The earlier `embroidered` pattern class was collapsed into `other` in the final V3 setup because it was the weakest and least stable pattern class.
+
+On the held-out test set, this final attribute model achieved:
+
+- `pattern_family`
+  - accuracy: `0.7955`
+  - macro F1: `0.7176`
+- `material_family`
+  - accuracy: `0.7415`
+  - macro F1: `0.6323`
+- `sleeve_family`
+  - accuracy: `0.9270`
+  - macro F1: `0.9194`
+
+This is the model the recommendation layer should treat as the current source of truth.
+
 ### 1. Category
 
 Predicted by the category model:
