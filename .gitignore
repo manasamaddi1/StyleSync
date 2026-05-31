@@ -29,7 +29,7 @@ dist/
 *.ckpt
 *.onnx
 
-!DeepFashion/attribute_modeling/model_b_v1/outputs/model_b_v3_pattern_simplified_resnet50_best.pt
+!models/model_b_v3_pattern_simplified_resnet50_best.pt
 !DeepFashion/attribute_modeling/model_b_v1/outputs/model_b_v3_pattern_simplified_label_vocabs.json
 
 # Logs

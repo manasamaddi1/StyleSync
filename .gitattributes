@@ -1,1 +1,1 @@
-DeepFashion/attribute_modeling/model_b_v1/outputs/model_b_v3_pattern_simplified_resnet50_best.pt filter=lfs diff=lfs merge=lfs -text
+models/model_b_v3_pattern_simplified_resnet50_best.pt filter=lfs diff=lfs merge=lfs -text

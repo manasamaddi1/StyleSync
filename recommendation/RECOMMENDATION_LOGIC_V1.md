@@ -59,7 +59,7 @@ This is intentionally simple because the recommendation layer should be easy to 
 
 The current final attribute checkpoint for recommendation is the V3 pattern-simplified model:
 
-- `model_b_v3_pattern_simplified_resnet50_best.pt`
+- `models/model_b_v3_pattern_simplified_resnet50_best.pt`
 
 This model uses the final recommendation-facing attribute schema:
 
