@@ -1,4 +1,4 @@
-# 👗 StyleSync
+# StyleSync
 
 A wardrobe planning tool that turns photos of individual clothing items into complete outfit suggestions. Upload a photo of any clothing piece, and StyleSync classifies it, extracts its color and attributes, and adds it to your digital closet. From there, a rule-based outfit engine assembles complete looks filtered by occasion — casual, formal, or sports.
 
@@ -25,26 +25,6 @@ A wardrobe planning tool that turns photos of individual clothing items into com
 
 StyleSync has three layers: a **static frontend** served by Vercel, a **Next.js API layer** that handles routing and storage, and a **Gradio inference app** on Hugging Face Spaces that runs all three PyTorch models.
 
-```
-User uploads clothing image
-        ↓
-Static frontend (Vercel — public/)
-        ↓  POST /api/predict
-Next.js API routes (Vercel — app/api/)
-        ↓  forwards image to HF Space
-Gradio app on Hugging Face Spaces (app.py)
-        ↓
-Model A  →  clothing category (top, bottom, shoes, dress, outerwear)
-Model B  →  occasion (casual, formal, sports)
-Model C  →  pattern, material, sleeve (multi-head, where applicable)
-Color extractor  →  dominant color via k-means
-        ↓  returns structured JSON
-Next.js API routes
-        ↓  stores item in Vercel KV (Redis)
-Wardrobe state persisted per session
-        ↓
-Outfit engine scores and assembles combinations from wardrobe
-```
 ![StyleSync Architecture](data/assets/stylesync-flowchart.png)
 
 **Key architectural decisions:**
@@ -264,12 +244,11 @@ StyleSync/
 
 All models use ResNet-50 pretrained on ImageNet as the backbone.
 
-| Model | File | Task | Status |
-|-------|------|------|--------|
-| Model A v1 | `models/resnet50_stylesync.pt` | Clothing category (5 classes) | ✅ Live |
-| Model A v2 | `models/resnet50_stylesync_improved.pt` | Clothing category (5 classes) | 🔄 Trained, pending deployment |
-| Model B | `models/resnet50_stylesync_occasion_v2.pt` | Occasion (3 classes) | ✅ Live |
-| Model C | `DeepFashion/.../model_b_v3_material_merged_resnet50_best.pt` | Pattern, material, sleeve | ✅ Live |
+| Model | File | Task |
+|-------|------|------|
+| Model A v2 | `models/resnet50_stylesync_improved.pt` | Clothing category (5 classes) | 
+| Model B | `models/resnet50_stylesync_occasion_v2.pt` | Occasion (3 classes) | 
+| Model C | `DeepFashion/.../model_b_v3_material_merged_resnet50_best.pt` | Pattern, material, sleeve | 
 
 **Model weights are not committed to GitHub** due to file size. Contact a team member for the `.pt` files, or download them from the HF Space Files tab.
 
@@ -292,7 +271,9 @@ cd StyleSync
 ### 2. Run the Gradio inference app locally
 
 ```bash
+# python dependencies
 pip install -r requirements.txt
+
 python app.py
 ```
 
@@ -370,4 +351,3 @@ To update:
 | **HF Space cold start** | First prediction after the Space has been idle takes several seconds to load models into memory. |
 | **Model weights not in repo** | `.pt` files exceed GitHub's 100MB limit and are excluded. The Gradio app will fail to start without them. |
 | **Outfit engine cannot model silhouette or fit** | The V1 engine is strongest on color harmony, occasion consistency, and pattern compatibility. It cannot reason about item length, body proportion, or personal style preference. |
-| **Remix requires wardrobe items with occasion labels** | The Remix feature calls the outfit engine which filters by occasion. Items uploaded before Model B was integrated may lack occasion labels, causing them to be treated as unknown occasion and scored at a lower weight. |

@@ -1,5 +1,21 @@
+# ── ML / Training ─────────────────────────────────────────────
 torch>=2.5
 torchvision>=0.20
 pillow
 numpy
 scikit-learn
+pandas
+matplotlib
+tqdm
+
+# ── Inference app (app.py) ────────────────────────────────────
+gradio
+
+# ── Data / Notebooks ──────────────────────────────────────────
+requests
+jupyter
+ipykernel
+openpyxl
+
+# ── Utilities ─────────────────────────────────────────────────
+python-dotenv
