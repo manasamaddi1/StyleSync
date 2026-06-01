@@ -186,15 +186,14 @@ function BuildScreen({ state, dispatch, compact, tweaks }) {
   }, [state.wardrobe, state.favorites, filter]);
 
   const filled = SLOT_ORDER.map(s => slots[s]).filter(Boolean);
-  const tagCounts = {};
-  filled.forEach(it => (it.tags || []).forEach(tg => { tagCounts[tg] = (tagCounts[tg] || 0) + 1; }));
-  const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
-  const topTag = sortedTags[0];
-  const vibeLabelMap = Object.fromEntries((window.SS_GENRES || []).map(g => [g.key, g.label.toLowerCase()]));
-  const vibeMatch =
+  const occCounts = {};
+  filled.forEach(it => { if (it.occasion) occCounts[it.occasion] = (occCounts[it.occasion] || 0) + 1; });
+  const sortedOcc = Object.entries(occCounts).sort((a, b) => b[1] - a[1]);
+  const topOcc = sortedOcc[0];
+  const occasionMatch =
     filled.length < 2 ? '—'
-    : topTag && topTag[1] >= 2
-      ? `${topTag[1]}/${filled.length} ${vibeLabelMap[topTag[0]] || topTag[0].replace('_', ' ')}`
+    : topOcc && topOcc[1] >= 2
+      ? `${topOcc[1]}/${filled.length} ${topOcc[0]}`
       : 'mixed';
 
   function placeItem(slotKey, item) {
@@ -242,13 +241,13 @@ function BuildScreen({ state, dispatch, compact, tweaks }) {
   }
 
   function autoPair() {
-    const have = new Set(filled.flatMap(it => it.tags || []));
+    const have = new Set(filled.map(it => it.occasion).filter(Boolean));
     const next = { ...slots };
     SLOT_ORDER.forEach(s => {
       if (!next[s]) {
         const pool = state.wardrobe.filter(it => it.cat === s);
-        // prefer tag overlap, then favorites, then anything
-        const matched = pool.filter(it => (it.tags || []).some(tg => have.has(tg)));
+        // prefer matching occasion, then favorites, then anything
+        const matched = pool.filter(it => it.occasion && have.has(it.occasion));
         const faved = pool.filter(it => state.favorites.includes(it.id));
         next[s] = matched[0] || faved[0] || pool[0] || null;
       }
@@ -271,7 +270,7 @@ function BuildScreen({ state, dispatch, compact, tweaks }) {
       name: (name || 'Untitled').trim(),
       // store IDs so looks stay in sync if pieces are edited/removed
       slots: SLOT_ORDER.reduce((acc, s) => { acc[s] = slots[s] ? slots[s].id : null; return acc; }, {}),
-      tag: topTag ? topTag[0] : null,
+      tag: topOcc ? topOcc[0] : null,
       createdAt: Date.now(),
     };
     dispatch({ type: 'save_outfit', outfit: look });
@@ -415,11 +414,11 @@ function BuildScreen({ state, dispatch, compact, tweaks }) {
           </div>
         </div>
         <div>
-          <Eyebrow style={{ marginBottom: 6 }}>Vibe match</Eyebrow>
+          <Eyebrow style={{ marginBottom: 6 }}>Occasion</Eyebrow>
           <div style={{
             fontFamily: FS, fontSize: compact ? 17 : 20, color: C.ink,
             textTransform: 'lowercase', lineHeight: 1.1,
-          }}>{vibeMatch}</div>
+          }}>{occasionMatch}</div>
         </div>
         {!compact && (
           <div>
@@ -600,7 +599,7 @@ function BuildScreen({ state, dispatch, compact, tweaks }) {
                 </div>
                 {look.tag && (
                   <div style={{ fontFamily: FN, fontSize: 11, color: C.muted, marginTop: 2 }}>
-                    {(vibeLabelMap[look.tag] || look.tag).replace('_', ' ')}
+                    {String(look.tag).replace('_', ' ')}
                   </div>
                 )}
               </button>

@@ -38,7 +38,7 @@ function WardrobeScreen({ state, dispatch, compact }) {
   // Perceptual color order — lights → warms → cools → darks. Unknowns last.
   const COLOR_ORDER = ['white','cream','beige','tan','yellow','orange','red','pink','purple','blue','green','gray','brown','black'];
 
-  // Search filter — matches name, color, category, fabric, or any vibe tag.
+  // Search filter — matches name, color, category, or fabric.
   const q = query.trim().toLowerCase();
   const matchedRaw = q
     ? state.wardrobe.filter(it =>
@@ -46,7 +46,7 @@ function WardrobeScreen({ state, dispatch, compact }) {
         (it.color  || '').toLowerCase().includes(q) ||
         (it.cat    || '').toLowerCase().includes(q) ||
         (it.fabric || '').toLowerCase().includes(q) ||
-        (it.tags || []).some(t => String(t).toLowerCase().includes(q))
+        (it.occasion || '').toLowerCase().includes(q)
       )
     : state.wardrobe;
 
@@ -71,7 +71,7 @@ function WardrobeScreen({ state, dispatch, compact }) {
     { k: 'category', label: 'Category' },
     { k: 'color',    label: 'Color'    },
     { k: 'fabric',   label: 'Fabric'   },
-    { k: 'vibe',     label: 'Vibe'     },
+    { k: 'occasion', label: 'Occasion' },
   ];
 
   // Build groups: ordered Map of label -> items
@@ -87,7 +87,7 @@ function WardrobeScreen({ state, dispatch, compact }) {
       else if (groupBy === 'category') push(it.cat, it);
       else if (groupBy === 'color')    push(it.color, it);
       else if (groupBy === 'fabric')   push(it.fabric, it);
-      else if (groupBy === 'vibe')     (it.tags && it.tags.length ? it.tags : ['unspecified']).forEach(t => push(t, it));
+      else if (groupBy === 'occasion')  push(it.occasion, it);
     });
     // Stable order: by group size desc, then alpha
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
@@ -112,7 +112,7 @@ function WardrobeScreen({ state, dispatch, compact }) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, color, vibe…"
+          placeholder="Search by name, color, category…"
           aria-label="Search closet"
           style={{
             width: '100%', boxSizing: 'border-box',
@@ -183,7 +183,7 @@ function WardrobeScreen({ state, dispatch, compact }) {
               fontSize: compact ? 20 : 24, color: C.ink,
             }}>Nothing matches “{query}”.</div>
             <div style={{ fontFamily: FN, fontSize: 13, color: C.muted }}>
-              Try a color, a category, or a vibe.
+              Try a color, a category, or an occasion.
             </div>
             <div style={{ marginTop: 6 }}>
               <window.SoftButton variant="ghost" size="sm" onClick={() => setQuery('')}>Clear search</window.SoftButton>
@@ -254,7 +254,6 @@ function EditItemModal({ item, favorited, onFav, onRemove, onSave, onClose, comp
   const [pattern, setPattern] = uSC(item.patternFamily || '');
   const [material, setMaterial] = uSC(item.materialFamily || '');
   const [sleeve, setSleeve] = uSC(item.sleeveFamily || '');
-  const [vibe, setVibe] = uSC((item.tags || []).join(', '));
 
   function save() {
     onSave({
@@ -268,7 +267,6 @@ function EditItemModal({ item, favorited, onFav, onRemove, onSave, onClose, comp
       patternFamily: pattern || undefined,
       materialFamily: material || undefined,
       sleeveFamily: (cat === 'top' || cat === 'outerwear' || cat === 'dress') ? (sleeve || undefined) : undefined,
-      tags: vibe.split(',').map(v => v.trim()).filter(Boolean),
     });
   }
 
@@ -383,23 +381,13 @@ function EditItemModal({ item, favorited, onFav, onRemove, onSave, onClose, comp
           </div>
         </div>
 
-        {/* Style tags (model attributes + vibe) */}
+        {/* Style tags (model attributes) */}
         <div style={{
           borderTop: `1px solid ${C.lineSoft}`, paddingTop: 24, marginBottom: 4,
         }}>
           <div style={{ ...fieldLabel, color: C.ink, marginBottom: 16, opacity: 0.55 }}>Style tags</div>
           <div style={sectionGrid}>
             {styleTags.map(renderSelect)}
-          </div>
-          <div style={{ display: 'grid', gap: 7, marginTop: 18 }}>
-            <span style={fieldLabel}>Vibe</span>
-            <input
-              value={vibe}
-              onChange={(e) => setVibe(e.target.value)}
-              placeholder={(window.SS_GENRES || []).slice(0, 3).map(g => g.label.toLowerCase()).join(', ')}
-              style={controlBase}
-            />
-            <span style={{ fontFamily: FN, fontSize: 11, color: C.muted }}>Comma-separated · how the piece feels</span>
           </div>
         </div>
 

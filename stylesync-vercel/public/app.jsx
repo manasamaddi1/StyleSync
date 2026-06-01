@@ -17,7 +17,6 @@ function reducer(state, action) {
     case 'add_item': return { ...state, wardrobe: [action.item, ...state.wardrobe] };
     case 'remove':   return { ...state, wardrobe: state.wardrobe.filter((x) => x.id !== action.id) };
     case 'fav':      return { ...state, favorites: state.favorites.includes(action.id) ? state.favorites.filter((x) => x !== action.id) : [...state.favorites, action.id] };
-    case 'genre':    return { ...state, genre: action.genre };
     case 'select':   return { ...state, selectedItemId: action.id };
     case 'update_item': return { ...state, wardrobe: state.wardrobe.map(x => x.id === action.item.id ? { ...x, ...action.item } : x) };
     case 'save_outfit':   return { ...state, outfits: [action.outfit, ...state.outfits].slice(0, 24) };
@@ -95,7 +94,6 @@ function App() {
     page: 'home',
     wardrobe: window.SS_SEED_WARDROBE,
     favorites: ['t3','b3','s2'],
-    genre: 'casual',
     selectedItemId: null,
     outfits: window.SS_SEED_OUTFITS || [],
     loadInto: null,
@@ -131,7 +129,7 @@ function App() {
         <window.TweakToggle label="Suggest similar pieces" value={tweaks.showSimilar}
           onChange={(v) => setTweak('showSimilar', v)} />
 
-        <window.TweakSection label="Vibe" />
+        <window.TweakSection label="Stylist" />
         <window.TweakRadio label="Stylist tone" value={tweaks.stylistTone}
           options={['warm','minimal','poetic']}
           onChange={(v) => setTweak('stylistTone', v)} />

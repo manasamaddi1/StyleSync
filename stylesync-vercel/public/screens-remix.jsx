@@ -30,16 +30,16 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
     const w = state.wardrobe.filter(x => x.id !== focus.id);
     const slots = ['top', 'bottom', 'shoes', 'outerwear'].filter(s => s !== focus.cat);
     const moods = [
-      { name: 'Quiet morning',   vibe: 'minimal' },
-      { name: 'Long lunch',      vibe: 'business_casual' },
-      { name: 'Bookshop & wine', vibe: 'cottage' },
+      { name: 'Casual', occ: 'casual' },
+      { name: 'Formal', occ: 'formal' },
+      { name: 'Sporty', occ: 'sports' },
     ];
     return moods.map((m, i) => {
       const pieces = { [focus.cat]: focus };
       const cardSeed = seeds[i] || {};
       slots.forEach((s, k) => {
         const seed = cardSeed[s] || 0;
-        const matches = w.filter(x => x.cat === s && x.tags.includes(m.vibe));
+        const matches = w.filter(x => x.cat === s && x.occasion === m.occ);
         const fall = w.filter(x => x.cat === s);
         const restOfCat = fall.filter(x => !matches.some(mm => mm.id === x.id));
         const pool = matches.length ? [...matches, ...restOfCat] : fall;
@@ -229,7 +229,7 @@ function StyleThisScreen({ state, dispatch, compact, tweaks }) {
                       bottom:    o.pieces.bottom?.id    || null,
                       shoes:     o.pieces.shoes?.id     || null,
                     },
-                    tag: o.vibe,
+                    tag: o.occ,
                     createdAt: Date.now(),
                   };
                   dispatch({ type: 'save_outfit', outfit: look });

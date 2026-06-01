@@ -129,7 +129,6 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
     setTimeout(() => setReveal(r => ({ ...r, pattern: incoming.patternFamily || 'solid' })), 1400/k);
     setTimeout(() => setReveal(r => ({ ...r, material: incoming.materialFamily || 'knit' })), 1700/k);
     setTimeout(() => setReveal(r => ({ ...r, sleeve: incoming.sleeveFamily || '' })), 2000/k);
-    setTimeout(() => setReveal(r => ({ ...r, vibe: incoming.tags.join(' · ') })), 2250/k);
     setTimeout(() => { setReveal(r => ({ ...r, conf: 0.94 })); setPhase('done'); }, 2500/k);
   }
 
@@ -157,7 +156,6 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
       setTimeout(() => setReveal(r => ({ ...r, pattern:  prediction.patternFamily || '' })), 1150/k);
       setTimeout(() => setReveal(r => ({ ...r, material: prediction.materialFamily || '' })), 1400/k);
       setTimeout(() => setReveal(r => ({ ...r, sleeve:   prediction.sleeveFamily || '' })), 1600/k);
-      setTimeout(() => setReveal(r => ({ ...r, vibe:     '' })),                  1800/k);
       setTimeout(() => {
         setReveal(r => ({
           ...r,
@@ -167,7 +165,7 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
           _subcategory: prediction.subcategory,
         }));
         setPhase('done');
-        // Vibe wasn't predicted — gently nudge user into edit mode
+        // No name yet — seed one from the predicted subcategory.
         if (!name) {
           setName(`New ${prediction.subcategory.toLowerCase()}`);
         }
@@ -200,9 +198,6 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
     if (saving) return;
     const finalColor = reveal.color || incoming.color;
     const finalCat   = reveal.category || incoming.cat;
-    const finalVibe  = reveal.vibe
-      ? reveal.vibe.split(/[·,/]\s*/).map(s => s.trim().replace(/\s+/g, '_')).filter(Boolean)
-      : [];
     const finalSwatch = reveal._swatch
       || (window.SS_SWATCH && window.SS_SWATCH[finalColor])
       || incoming.swatch;
@@ -228,7 +223,6 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
       color: finalColor,
       swatch: finalSwatch,
       fabric: reveal.fabric || '',
-      tags: finalVibe,
       // structured model outputs (Models B + C) — feed the recommender
       occasion: reveal.occasion || undefined,
       occasionConfidence: reveal.occasionConf,
@@ -440,7 +434,6 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
               ['Pattern',  'pattern',  reveal.pattern,  ['solid','striped','graphic','floral','other']],
               ['Material', 'material', reveal.material, ['denim','knit','leather','chiffon','other']],
               ['Sleeve',   'sleeve',   reveal.sleeve,   ['sleeveless','short_sleeve','long_sleeve']],
-              ['Vibe',     'vibe',     reveal.vibe,     (window.SS_GENRES || []).map(g => g.key.replace('_',' '))],
               ...(t.showConfidence && !editing ? [['Confidence', 'conf', reveal.conf ? Math.round(reveal.conf*100) + '%' : null, null]] : []),
             ].map(([k, key, v, options], i, arr) => {
               const display = key === 'sleeve' && v ? String(v).replace(/_/g, ' ') : v;
@@ -472,7 +465,7 @@ function UploadScreen({ state, dispatch, compact, tweaks }) {
                     fontFamily: FN,
                     fontSize: 14, fontWeight: 500,
                     color: v ? C.ink : '#C9BDA0',
-                  }}>{display || (k === 'Vibe' && phase === 'done' && hasAPI ? 'pick one →' : '—')}</span>
+                  }}>{display || '—'}</span>
                 )}
                 <span>
                   {k === 'Color' && v && (

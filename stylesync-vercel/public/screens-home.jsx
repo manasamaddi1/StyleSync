@@ -242,8 +242,8 @@ function HomeScreen({ state, dispatch, compact }) {
         }}>
           {[
             ['01', 'Snap', 'Drop in a pic of any piece you own.'],
-            ['02', 'Tag',  'We guess category, color, and vibe.'],
-            ['03', 'Style', 'Pick a feeling — we put together looks.'],
+            ['02', 'Tag',  'We guess category, color, and occasion.'],
+            ['03', 'Style', 'Pick an occasion — we put together looks.'],
             ['04', 'Remix', 'Style any single piece three ways.'],
           ].map(([n, t, d]) => (
             <Card key={n} style={{ padding: 20 }}>

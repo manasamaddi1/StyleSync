@@ -48,7 +48,6 @@ function reducerProd(state, action) {
     }
     case 'remove':   return { ...state, wardrobe: state.wardrobe.filter((x) => x.id !== action.id) };
     case 'fav':      return { ...state, favorites: state.favorites.includes(action.id) ? state.favorites.filter((x) => x !== action.id) : [...state.favorites, action.id] };
-    case 'genre':    return { ...state, genre: action.genre };
     case 'select':   return { ...state, selectedItemId: action.id };
     case 'update_item': return { ...state, wardrobe: state.wardrobe.map(x => x.id === action.item.id ? { ...x, ...action.item } : x) };
     case 'save_outfit':   return { ...state, outfits: [action.outfit, ...state.outfits].slice(0, 24) };
@@ -189,9 +188,8 @@ function ProductionApp() {
     const p = loadPersisted();
     return {
       page: pageFromHash() || 'home',
-      wardrobe: p?.wardrobe || window.SS_SEED_WARDROBE,
+      wardrobe: (p && p.wardrobe && p.wardrobe.length) ? p.wardrobe : window.SS_SEED_WARDROBE,
       favorites: p?.favorites || [],
-      genre: p?.genre || 'casual',
       selectedItemId: null,
       outfits: p?.outfits || window.SS_SEED_OUTFITS || [],
       loadInto: null,
@@ -205,7 +203,7 @@ function ProductionApp() {
   const tweaks = window.UPLOAD_TWEAKS || {};
 
   // Persist relevant slices on change.
-  uEP(() => { persist(state); }, [state.wardrobe, state.favorites, state.outfits, state.genre]);
+  uEP(() => { persist(state); }, [state.wardrobe, state.favorites, state.outfits]);
 
   // page → URL hash (pushState so browser Back works)
   uEP(() => {

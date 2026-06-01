@@ -1,4 +1,4 @@
-// Looks / Outfits — pick a feeling, get a head-to-toe outfit
+// Looks / Outfits — pick an occasion, get a head-to-toe outfit
 
 const { useState: uSL, useMemo: uML } = React;
 
@@ -9,32 +9,21 @@ function OutfitsScreen({ state, dispatch, compact, tweaks }) {
   const t = { ...(window.UPLOAD_TWEAKS || {}), ...(tweaks || {}) };
   const accent = { terra: C.terra, sage: C.sage, butter: C.butter, rose: '#D89AA0' }[t.accent] || C.terra;
 
-  // Two axes: OCCASION drives the engine's scoring; VIBE narrows the pool.
+  // Single axis: OCCASION drives the engine's scoring.
   const OCCASIONS_O = [
     { key: 'casual', label: 'Casual' },
     { key: 'formal', label: 'Formal' },
     { key: 'sports', label: 'Sports' },
   ];
-  const VIBE_OCC = {
-    casual: 'casual', cottage: 'casual', minimal: 'casual', punk: 'casual',
-    business_casual: 'formal', athletic: 'sports',
-  };
 
-  const [vibe, setVibe] = uSL(state.genre || 'casual');
-  const [occasion, setOccasion] = uSL(VIBE_OCC[state.genre] || 'casual');
+  const [occasion, setOccasion] = uSL('casual');
   const [seedN, setSeedN] = uSL(0);
 
-  // Run the real V1 engine. Vibe filters the candidate pool; if that pool can't
-  // make a top + bottom, relax to the whole closet and flag it.
+  // Run the real V1 engine over the whole closet for the chosen occasion.
   const reco = uML(() => {
     const w = state.wardrobe || [];
-    const byVibe = w.filter(it => (it.tags || []).includes(vibe));
-    const hasTB = byVibe.some(i => i.cat === 'top') && byVibe.some(i => i.cat === 'bottom');
-    const useVibe = !!vibe && hasTB;
-    const pool = useVibe ? byVibe : w;
-    const res = window.SS_RECO ? window.SS_RECO.recommend(pool, occasion, { limit: 9 }) : { outfits: [] };
-    return { ...res, relaxed: !!vibe && byVibe.length > 0 && !hasTB };
-  }, [state.wardrobe, vibe, occasion]);
+    return window.SS_RECO ? window.SS_RECO.recommend(w, occasion, { limit: 9 }) : { outfits: [] };
+  }, [state.wardrobe, occasion]);
 
   const allOutfits = reco.outfits || [];
   // Shuffle rotates a window of three through the ranked list.
@@ -45,23 +34,21 @@ function OutfitsScreen({ state, dispatch, compact, tweaks }) {
   const notEnough = reco.reason === 'need_top_and_bottom';
 
   const occLabel = (OCCASIONS_O.find(o => o.key === occasion)?.label || 'casual').toLowerCase();
-  const vibeName = (window.SS_GENRES.find(g => g.key === vibe)?.label || '').toLowerCase();
 
   function wearReco(o) {
     dispatch({ type: 'load_into_build', outfit: {
       id: 'reco-' + Date.now(),
-      name: `${occLabel}${vibeName ? ' · ' + vibeName : ''}`,
+      name: occLabel,
       slots: {
         outerwear: o.slots.outerwear?.id || null,
         top:       o.slots.top?.id       || null,
         bottom:    o.slots.bottom?.id    || null,
         shoes:     o.slots.shoes?.id     || null,
       },
-      tag: vibe,
+      tag: occasion,
     }});
   }
 
-  const vibeLabelMap = Object.fromEntries((window.SS_GENRES || []).map(g => [g.key, g.label.toLowerCase()]));
   const SLOT_ORDER_O = ['outerwear', 'top', 'bottom', 'shoes'];
   const myLooks = state.outfits || [];
 
@@ -135,7 +122,7 @@ function OutfitsScreen({ state, dispatch, compact, tweaks }) {
                     }}>{look.name.toLowerCase()}</div>
                     {look.tag && (
                       <div style={{ fontFamily: FN, fontSize: 11, color: C.muted, marginTop: 4 }}>
-                        {(vibeLabelMap[look.tag] || look.tag).replace('_', ' ')}
+                        {String(look.tag).replace('_', ' ')}
                       </div>
                     )}
                   </div>
@@ -169,10 +156,10 @@ function OutfitsScreen({ state, dispatch, compact, tweaks }) {
 
       {/* ── Styled for you (real V1 engine) ── */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
+        <div style={{ paddingBottom: 12 }}>
           <window.Eyebrow style={{ marginBottom: 10 }}>Styled for you · rule-based</window.Eyebrow>
-          <window.ScreenH1 compact={compact}>
-            {`${occLabel.charAt(0).toUpperCase()}${occLabel.slice(1)} looks`}{vibeName ? `, ${vibeName} vibe.` : '.'}
+          <window.ScreenH1 compact={compact} style={{ lineHeight: 1.05, whiteSpace: compact ? 'normal' : 'nowrap' }}>
+            {`${occLabel.charAt(0).toUpperCase()}${occLabel.slice(1)} looks.`}
           </window.ScreenH1>
         </div>
         {outfits.length > 0 && (
@@ -208,40 +195,6 @@ function OutfitsScreen({ state, dispatch, compact, tweaks }) {
         </div>
       </div>
 
-      {/* Vibe — the expressive axis; narrows the candidate pool */}
-      <div style={{ display: 'grid', gap: 8 }}>
-        <window.Eyebrow>Vibe</window.Eyebrow>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {window.SS_GENRES.map(g => (
-            <button key={g.key}
-              onClick={() => { setVibe(g.key); setSeedN(0); dispatch({ type: 'genre', genre: g.key }); }}
-              style={{
-                background: vibe === g.key ? C.ink : C.paper,
-                color: vibe === g.key ? C.paper : C.ink,
-                border: `1px solid ${vibe === g.key ? C.ink : C.line}`,
-                borderRadius: R.r3, cursor: 'pointer',
-                padding: compact ? '8px 14px' : '9px 16px',
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                fontFamily: FN, fontSize: compact ? 12 : 13, fontWeight: 500,
-              }}>
-              <span style={{ fontSize: 14, opacity: 0.85 }}>{g.emoji}</span>
-              <span>{g.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Relaxed-pool note */}
-      {reco.relaxed && (
-        <div style={{
-          background: C.paper, border: `1px solid ${C.line}`, borderRadius: R.r1,
-          padding: '10px 14px', fontFamily: FN, fontSize: 13, color: C.muted, lineHeight: 1.5,
-        }}>
-          Not enough <b style={{ color: C.ink }}>{vibeName}</b> pieces to build a full look yet —
-          showing {occLabel} looks from your whole closet instead.
-        </div>
-      )}
-
       {/* Not-enough state */}
       {notEnough && (
         <div style={{
@@ -269,7 +222,7 @@ function OutfitsScreen({ state, dispatch, compact, tweaks }) {
         }}>
           {outfits.map((o, idx) => (
             <window.RecoCard
-              key={`${occasion}-${vibe}-${windowStart + idx}`}
+              key={`${occasion}-${windowStart + idx}`}
               outfit={o}
               rank={windowStart + idx}
               onApply={wearReco}
