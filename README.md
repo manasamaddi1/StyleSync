@@ -45,7 +45,7 @@ Wardrobe state persisted per session
         ↓
 Outfit engine scores and assembles combinations from wardrobe
 ```
-![StyleSync Architecture](styleSync-flowchart.png)
+![StyleSync Architecture](data/assets/styleSync-flowchart.png)
 
 **Key architectural decisions:**
 
