@@ -246,7 +246,7 @@ All models use ResNet-50 pretrained on ImageNet as the backbone.
 
 | Model | File | Task |
 |-------|------|------|
-| Model A v2 | `models/resnet50_stylesync_improved.pt` | Clothing category (5 classes) | 
+| Model A | `models/resnet50_stylesync_improved.pt` | Clothing category (5 classes) | 
 | Model B | `models/resnet50_stylesync_occasion_v2.pt` | Occasion (3 classes) | 
 | Model C | `DeepFashion/.../model_b_v3_material_merged_resnet50_best.pt` | Pattern, material, sleeve | 
 
@@ -345,8 +345,6 @@ To update:
 | **Outerwear precision** | Model A precision for Outerwear is 0.542 due to only 279 training samples. The model over-predicts Outerwear for ambiguous items like cardigans and heavy knits. |
 | **Material head reliability** | Model C `material_family` scores only 8 points above the majority baseline. Assigned the lowest weight (5%) in outfit scoring — treat material predictions as low-confidence. |
 | **Color on white backgrounds** | The k-means extractor masks near-white pixels but may still pick up off-white or cream backgrounds on light garments as the dominant color. |
-| **No Dress or Shoes attribute predictions** | Model C covers Tops, Bottomwear, and Outerwear only. Shoes are scored on category, occasion, and color only. Dresses are out of scope for attribute prediction. |
-| **Model A v2 not yet deployed** | `resnet50_stylesync_improved.pt` is trained and ready but the HF Space still runs v1. |
 | **No user authentication** | Wardrobe is session-scoped with no login. Multiple users sharing a session share the same wardrobe. |
 | **HF Space cold start** | First prediction after the Space has been idle takes several seconds to load models into memory. |
 | **Model weights not in repo** | `.pt` files exceed GitHub's 100MB limit and are excluded. The Gradio app will fail to start without them. |
